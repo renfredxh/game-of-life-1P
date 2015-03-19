@@ -2,6 +2,8 @@ BasicGame.Game = function (game) {
 
 };
 
+var TILE_COUNT = 25;
+
 var LifeTile = function() {
   this.sprite = null;
   this.alive = false;
@@ -52,11 +54,12 @@ BasicGame.Game.prototype = {
 
     create: function () {
       this.game.stage.backgroundColor = 0x212121;
+      this.rnd.sow([Date.now()]);
       this.tiles = [];
 
-      for (var i=0; i<25; i++) {
+      for (var i=0; i<TILE_COUNT; i++) {
         this.tiles.push([]);
-        for (var j=0; j<25; j++) {
+        for (var j=0; j<TILE_COUNT; j++) {
           var lifeTile = new LifeTile();
           lifeTile.sprite = this.game.add.sprite(i*32, j*32, 'lifeTiles');
           lifeTile.sprite.inputEnabled = true;
@@ -66,8 +69,18 @@ BasicGame.Game.prototype = {
           this.tiles[i][j] = lifeTile;
         }
       }
-      this.tiles[4][16].setAlive();
-      this.tiles[5][16].setAlive();
+
+      for (i=0; i<this.rnd.integerInRange(4,10); i++) {
+        var x = this.rnd.integerInRange(10, 16);
+        var y = this.rnd.integerInRange(10, 16);
+        this.tiles[x][y].setAlive();
+      }
+
+      this.lifeSound = this.add.audio('lifeSound');
+      this.deathSound = this.add.audio('deathSound');
+      this.loseSound = this.add.audio('loseSound');
+      this.lifeSound.allowMultiple = true;
+      this.deathSound.allowMultiple = true;
     },
 
     update: function () {
@@ -80,15 +93,18 @@ BasicGame.Game.prototype = {
      */
     updateTiles: function(selectedTile) {
       if (selectedTile.alive === true) {
+        this.deathSound.play();
         selectedTile.setDead();
       } else {
+        this.lifeSound.play();
         selectedTile.setAlive();
       }
       var beforeLifeState = selectedTile.alive;
       var tiles = this.frozenTilesState();
+      var lifeCount = 0;
       // Apply the rules of game of Conway's Game of Life for each tile.
-      for (var i=0; i<25; i++) {
-        for (var j=0; j<25; j++) {
+      for (var i=0; i<TILE_COUNT; i++) {
+        for (var j=0; j<TILE_COUNT; j++) {
           var tile = this.tiles[i][j];
           var count = tile.countLiveNeighbors(tiles);
           if (count < 2 || count > 3) {
@@ -96,9 +112,17 @@ BasicGame.Game.prototype = {
           } else if (tile.alive === false && count === 3) {
             tile.setAlive();
           }
+          if (tile.x !== selectedTile.x || tile.y !== selectedTile.y) {
+            lifeCount += tile.alive === true ? 1 : 0;
+          }
         }
       }
       selectedTile.setLifeState(beforeLifeState);
+      lifeCount += selectedTile.alive === true ? 1 : 0;
+      if (lifeCount <= 1) {
+        this.loseSound.play();
+        this.state.restart(true, false, {});
+      }
     },
 
     /*
@@ -107,9 +131,9 @@ BasicGame.Game.prototype = {
      */
     frozenTilesState: function() {
       var frozenTiles = [];
-      for (var i=0; i<25; i++) {
+      for (var i=0; i<TILE_COUNT; i++) {
         frozenTiles.push([]);
-        for (var j=0; j<25; j++) {
+        for (var j=0; j<TILE_COUNT; j++) {
           var match = this.tiles[i][j];
           frozenTiles[i][j] = { alive: match.alive };
         }

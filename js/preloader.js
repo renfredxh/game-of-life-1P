@@ -10,6 +10,9 @@ BasicGame.Preloader.prototype = {
   preload: function () {
     //  + lots of other required assets here
     this.load.spritesheet('lifeTiles', 'assets/lifeTiles.png', 32, 32);
+    this.load.audio('lifeSound', ['assets/lifeSound.ogg', 'assets/lifeSound.wav']);
+    this.load.audio('deathSound', ['assets/deathSound.ogg', 'assets/deathSound.wav']);
+    this.load.audio('loseSound', ['assets/loseSound.ogg', 'assets/loseSound.wav']);
   },
 
   create: function () {

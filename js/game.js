@@ -56,6 +56,7 @@ BasicGame.Game.prototype = {
       this.game.stage.backgroundColor = 0x212121;
       this.rnd.sow([Date.now()]);
       this.tiles = [];
+      this.turns = 0;
 
       for (var i=0; i<TILE_COUNT; i++) {
         this.tiles.push([]);
@@ -76,15 +77,27 @@ BasicGame.Game.prototype = {
         this.tiles[x][y].setAlive();
       }
 
+      this.reseter = this.game.add.sprite(this.game.width - 40, this.game.height - 40, 'lifeTiles');
+      this.reseter.frame = 1;
+      this.reseter.inputEnabled = true;
+      this.reseter.events.onInputDown.add(this.resetGame, this);
+
       this.lifeSound = this.add.audio('lifeSound');
       this.deathSound = this.add.audio('deathSound');
       this.loseSound = this.add.audio('loseSound');
       this.lifeSound.allowMultiple = true;
       this.deathSound.allowMultiple = true;
+
+      this.turnsText = this.game.add.text(16, this.game.height - 4, "", { fontSize: '10px', fill: '#fff'});
+      this.aliveText = this.game.add.text(400, this.game.height - 4, "", { fontSize: '10px', fill: '#fff'});
+      this.turnsText.font = "Courier New";
+      this.aliveText.font = "Courier New";
+      this.turnsText.anchor.set(0, 1);
+      this.aliveText.anchor.set(0, 1);
     },
 
     update: function () {
-      //  Honestly, just about anything could go here. It's YOUR game after all. Eat your heart out!
+      this.turnsText.text = "Generations: " + parseInt(this.turns);
     },
 
     /*
@@ -119,10 +132,12 @@ BasicGame.Game.prototype = {
       }
       selectedTile.setLifeState(beforeLifeState);
       lifeCount += selectedTile.alive === true ? 1 : 0;
+      this.aliveText.text = "Alive: " + parseInt(lifeCount);
       if (lifeCount <= 1) {
         this.loseSound.play();
-        this.state.restart(true, false, {});
+        this.resetGame();
       }
+      this.turns++;
     },
 
     /*
@@ -141,12 +156,8 @@ BasicGame.Game.prototype = {
       return frozenTiles;
     },
 
-    quitGame: function (pointer) {
-      //  Here you should destroy anything you no longer need.
-      //  Stop music, delete sprites, purge caches, free resources, all that good stuff.
-
-      //  Then let's go back to the main menu.
-      this.state.start('MainMenu');
+    resetGame: function () {
+      this.state.restart(true, false, {});
     }
 
 };
